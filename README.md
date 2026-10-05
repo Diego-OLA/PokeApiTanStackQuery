@@ -1,36 +1,32 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## ⚡ Estrategia de Caché y Estado Servidor
 
-## Getting Started
+Este proyecto utiliza **TanStack Query (v5)** con el **App Router de Next.js** para optimizar el rendimiento mediante el uso eficiente de la memoria y la hidratación de datos.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+### 1. Servidor a Cliente (Hidratación)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Para evitar peticiones duplicadas en la carga inicial:
+1. **Servidor:** Pre-carga los datos iniciales con `prefetchQuery()` o `prefetchInfiniteQuery()`.
+2. **Serialización:** Convierte el estado de la memoria a JSON usando `dehydrate()`.
+3. **Cliente:** Recibe los datos mediante `<HydrationBoundary>` e inyecta la caché directamente en la memoria RAM del navegador.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 2. Convención de Claves (`queryKey`)
 
-## Learn More
+| Clave de Caché | Tipo | Descripción |
+| :--- | :--- | :--- |
+| `['pokemon-infinite']` | Scroll Infinito | Almacena la matriz acumulativa de páginas (`data.pages`). |
+| `['pokemon-detail', name]` | Detalle Dinámico | Almacena la información del Pokémon actual según la variable `name`. |
 
-To learn more about Next.js, take a look at the following resources:
+> 
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 3. Optimizaciones Principales
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+* **Prefetch por Hover:** Al pasar el cursor (`onMouseEnter`) sobre la tarjeta de un Pokémon, se precarga su detalle en segundo plano. Al hacer clic, la página abre en **0 ms**.
+* **Scroll Infinito Automático:** Usa `useInfiniteQuery` junto a `IntersectionObserver` (`react-intersection-observer`). El cálculo del desplazamiento se gestiona dinámicamente:
+  `offset = allPages.length * 20`
+* **Control de Re-peticiones:** El `useEffect` valida que la red esté libre (`!isFetchingNextPage`) antes de solicitar la siguiente página, evitando peticiones duplicadas.
